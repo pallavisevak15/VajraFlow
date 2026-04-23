@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Leaf, Globe, Route, ShieldCheck, TrendingDown, Info, Zap, ChevronRight } from 'lucide-react';
 
@@ -9,7 +9,7 @@ export default function Sustainability() {
 
   const fetchGreenRoutes = async () => {
     try {
-      const response = await axios.get('/api/green-routes');
+      const response = await api.get('/api/green-routes');
       setGreenRoutes(response.data);
       setLoading(false);
     } catch (err) {

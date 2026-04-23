@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import { Activity, AlertTriangle, Route, ShieldAlert, Zap, Search, ShieldCheck, TrendingDown, Crosshair, LogOut, Shield, TrendingUp, User, Mail, ChevronDown, Brain, Leaf, Globe } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -68,16 +68,11 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('/api/nodes', {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
+      const res = await api.get('/api/nodes');
       setNodes(res.data);
       setIsBackendConnected(true);
       
-      const scoreRes = await axios.get('/api/resilience-score', {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-      });
+      const scoreRes = await api.get('/api/resilience-score');
       setResilienceScore(scoreRes.data.score);
     } catch (err) {
       console.log('Backend not connected, using mock mode.');
@@ -91,13 +86,10 @@ export default function Dashboard() {
     if (isBackendConnected) {
       try {
         const severity = eventType === 'Port Strike' ? 8 : 6;
-        const token = localStorage.getItem('token');
-        const res = await axios.post('/api/inject-fault', {
+        const res = await api.post('/api/inject-fault', {
           node_id: nodeId,
           severity_level: severity,
           event_type: eventType
-        }, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         
         const data = res.data;
@@ -133,13 +125,11 @@ export default function Dashboard() {
           const predictOrigin = nodeId;
           const predictDest = downstreamKeys.length > 0 ? downstreamKeys[0] : 'WH_CHICAGO';
           
-          const predRes = await axios.post('/api/predict', {
+          const predRes = await api.post('/api/predict', {
             origin: predictOrigin,
             destination: predictDest,
             chaos_severity: severity,
             event_type: eventType
-          }, {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
           });
           
           setAiPrediction(predRes.data);
@@ -212,10 +202,7 @@ export default function Dashboard() {
   const healNetwork = async () => {
     if (isBackendConnected) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.post('/api/heal-network', {}, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
+        await api.post('/api/heal-network', {});
         await fetchData();
         setActiveAlerts([]);
         setPlanB(null);

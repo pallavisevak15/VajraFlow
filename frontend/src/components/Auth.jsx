@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import { motion } from 'framer-motion';
 import { Shield, ArrowRight, UserPlus, LogIn, AlertCircle, Lock } from 'lucide-react';
 
@@ -63,7 +63,7 @@ export default function Auth() {
     };
 
     try {
-      const response = await axios.post(url, payload);
+      const response = await api.post(url, payload);
 
       // Save token and user info
       localStorage.setItem('token', response.data.access_token);
@@ -117,7 +117,8 @@ export default function Auth() {
             </div>
             {error === 'Network Error' && (
               <div className="pt-2 border-t border-red-500/20">
-                <p className="text-xs text-white/50 mb-3">Ensure your FastAPI backend is running on <code className="bg-black/40 px-1 rounded">127.0.0.1:8000</code>.</p>
+                <p className="text-xs text-white/50 mb-3">Ensure your FastAPI backend is running and CORS is allowed for <code className="bg-black/40 px-1 rounded">{window.location.origin}</code>.</p>
+                <p className="text-[10px] text-white/30 mb-3 italic">Tip: If deployed, check your VITE_API_URL environment variable.</p>
                 <button 
                   type="button"
                   onClick={() => {

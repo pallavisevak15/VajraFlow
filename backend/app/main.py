@@ -36,8 +36,16 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 origins = [
     "http://localhost:5173",
     "http://localhost:3000",
-    "https://agamya-supply-chain.vercel.app", # Replace with your actual Vercel URL
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "https://agamya-supply-chain.vercel.app",
+    "https://vajraflow.vercel.app", # Potential new name
 ]
+
+# Add a wildcard for development or if the user is on a dynamic Vercel preview URL
+import os
+if os.getenv("ALLOW_ALL_ORIGINS") == "true":
+    origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
