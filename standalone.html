@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aegis Logistics - Standalone</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: '#0B0F19',
+            surface: '#1A233A',
+            primary: '#3B82F6',
+            success: '#10B981',
+            warning: '#F59E0B',
+            danger: '#EF4444',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React & ReactDOM via CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  
+  <!-- Babel for in-browser JSX parsing -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons (Browser version) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      background-color: #0B0F19;
+      color: white;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    }
+    
+    .gauge-circle {
+      transition: stroke-dashoffset 0.5s ease-in-out, stroke 0.5s ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-6">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const MOCK_NODES = [
+      { id: "FACTORY_SHENZHEN", name: "Shenzhen Assembly Plant", type: "Factory", health_status: "Healthy", current_stock: 50000 },
+      { id: "PORT_SHANGHAI", name: "Port of Shanghai", type: "Port", health_status: "Healthy", current_stock: 100000 },
+      { id: "PORT_LA", name: "Port of Los Angeles", type: "Port", health_status: "Healthy", current_stock: 80000 },
+      { id: "WH_CHICAGO", name: "Chicago Central Hub", type: "Warehouse", health_status: "Healthy", current_stock: 20000 },
+    ];
+
+    function Dashboard() {
+      const [nodes, setNodes] = useState(MOCK_NODES);
+      const [resilienceScore, setResilienceScore] = useState(100);
+      const [activeAlerts, setActiveAlerts] = useState([]);
+      const [planB, setPlanB] = useState(null);
+      const [loading, setLoading] = useState(false);
+
+      // Re-initialize Lucide icons after render
+      useEffect(() => {
+        lucide.createIcons();
+      });
+
+      const triggerDisruption = (nodeId, eventType) => {
+        setLoading(true);
+        
+        setTimeout(() => {
+          const updatedNodes = nodes.map(n => 
+            n.id === nodeId ? { ...n, health_status: "Critical" } : n
+          );
+          setNodes(updatedNodes);
+          
+          const newScore = Math.max(0, resilienceScore - 20);
+          setResilienceScore(newScore);
+          
+          const newAlert = {
+            id: Date.now(),
+            message: `${eventType} simulated at ${nodes.find(n=>n.id===nodeId)?.name}. Network degraded.`,
+            time: new Date().toLocaleTimeString(),
+            downstream: [
+              { name: "Chicago Central Hub", delay: "48 hours", cost: "$24,000" },
+              { name: "New York Distribution", delay: "36 hours", cost: "$18,000" }
+            ]
+          };
+          
+          setActiveAlerts([newAlert, ...activeAlerts]);
+          
+          setPlanB({
+            source: "Port of Vancouver",
+            target: "Chicago Central Hub",
+            newLeadTime: "5 days",
+            delayPenalty: "1 day",
+            totalCost: "$12,000"
+          });
+          
+          setLoading(false);
+        }, 800);
+      };
+
+      const healNetwork = () => {
+        setNodes(MOCK_NODES);
+        setResilienceScore(100);
+        setActiveAlerts([]);
+        setPlanB(null);
+      };
+
+      const radius = 45;
+      const circumference = 2 * Math.PI * radius;
+      const strokeDashoffset = circumference - (resilienceScore / 100) * circumference;
+      const scoreColor = resilienceScore > 80 ? '#10B981' : resilienceScore > 50 ? '#F59E0B' : '#EF4444';
+
+      return (
+        <div className="max-w-7xl mx-auto">
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold tracking-tight text-white">Aegis Logistics</h1>
+            <p className="text-gray-400 mt-1">Supply Chain Stress-Test Engine</p>
+          </header>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              <div className="bg-surface rounded-xl p-6 border border-gray-800 shadow-xl relative overflow-hidden">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <i data-lucide="activity" className="text-primary"></i> System Health
+                </h2>
+                
+                <div className="flex justify-center items-center mb-6">
+                  <div className="relative w-40 h-40">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle cx="80" cy="80" r={radius} stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-800" />
+                      <circle cx="80" cy="80" r={radius} stroke={scoreColor} strokeWidth="10" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} className="gauge-circle" strokeLinecap="round" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-4xl font-bold" style={{ color: scoreColor }}>{resilienceScore}</span>
+                      <span className="text-xs text-gray-400 mt-1 uppercase tracking-wider">Score</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center pt-4 border-t border-gray-800">
+                  <div className="text-sm">
+                    <span className="text-gray-400 block">Active Nodes</span>
+                    <span className="text-xl font-semibold">{nodes.length}</span>
+                  </div>
+                  <div className="text-sm text-right">
+                    <span className="text-gray-400 block">Disruptions</span>
+                    <span className="text-xl font-semibold text-danger">{activeAlerts.length}</span>
+                  </div>
+                </div>
+              </div>
+
+              {planB && (
+                <div className="bg-surface rounded-xl p-6 border border-primary/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
+                    <i data-lucide="route"></i> Plan B Recommendation
+                  </h2>
+                  <div className="space-y-4">
+                    <div className="bg-background rounded-lg p-4 text-sm">
+                      <div className="flex justify-between text-gray-400 mb-1">
+                        <span>Alternative Route</span>
+                      </div>
+                      <div className="font-medium">{planB.source} ➔ {planB.target}</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-background rounded-lg p-3">
+                        <span className="text-xs text-gray-400 block">New Lead Time</span>
+                        <span className="font-semibold text-warning">{planB.newLeadTime}</span>
+                      </div>
+                      <div className="bg-background rounded-lg p-3">
+                        <span className="text-xs text-gray-400 block">Added Cost</span>
+                        <span className="font-semibold text-danger">{planB.totalCost}</span>
+                      </div>
+                    </div>
+                    <button className="w-full py-2 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg font-medium transition-colors border border-primary/50">
+                      Execute Pivot
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Middle Column */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-surface rounded-xl p-6 border border-gray-800 shadow-xl">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <i data-lucide="zap" className="text-warning"></i> Chaos Injection Engine
+                  </h2>
+                  <button onClick={healNetwork} className="text-sm px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
+                    Heal Network
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {nodes.map(node => (
+                    <div key={node.id} className={`p-5 rounded-xl border transition-all ${node.health_status === 'Healthy' ? 'bg-background border-gray-800' : 'bg-danger/10 border-danger/50'}`}>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-semibold">{node.name}</h3>
+                          <span className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                            {node.type} • Stock: {node.current_stock.toLocaleString()}
+                          </span>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full ${node.health_status === 'Healthy' ? 'bg-success/20 text-success' : 'bg-danger/20 text-danger'}`}>
+                          {node.health_status}
+                        </span>
+                      </div>
+                      
+                      {node.health_status === 'Healthy' && (
+                        <div className="flex gap-2 mt-4">
+                          <button 
+                            disabled={loading}
+                            onClick={() => triggerDisruption(node.id, "Port Strike")}
+                            className="flex-1 bg-gray-800 hover:bg-warning/20 hover:text-warning text-xs py-2 rounded transition-colors border border-transparent hover:border-warning/30"
+                          >
+                            Strike
+                          </button>
+                          <button 
+                            disabled={loading}
+                            onClick={() => triggerDisruption(node.id, "Severe Weather")}
+                            className="flex-1 bg-gray-800 hover:bg-danger/20 hover:text-danger text-xs py-2 rounded transition-colors border border-transparent hover:border-danger/30"
+                          >
+                            Weather
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ripple Effect Logs */}
+              <div className="bg-surface rounded-xl p-6 border border-gray-800 shadow-xl">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <i data-lucide="alert-triangle" className="text-danger"></i> Ripple Effect Analysis
+                </h2>
+                
+                {activeAlerts.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 flex flex-col items-center">
+                    <i data-lucide="search" className="mb-2 opacity-50 w-8 h-8"></i>
+                    <p>System operating normally. No disruptions detected.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {activeAlerts.map((alert) => (
+                      <div key={alert.id} className="border-l-4 border-danger bg-background p-4 rounded-r-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-medium text-danger">{alert.message}</span>
+                          <span className="text-xs text-gray-500">{alert.time}</span>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                          <p className="text-xs text-gray-400 font-semibold uppercase">Downstream Impacts</p>
+                          {alert.downstream.map((ds, idx) => (
+                            <div key={idx} className="flex justify-between text-sm bg-surface p-2 rounded">
+                              <span>{ds.name}</span>
+                              <div className="flex gap-4">
+                                <span className="text-warning">+{ds.delay}</span>
+                                <span className="text-danger">+{ds.cost}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<Dashboard />);
+  </script>
+</body>
+</html>
