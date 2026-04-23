@@ -7,6 +7,7 @@ import Auth from './components/Auth'
 import Agent from './components/Agent'
 import Sustainability from './components/Sustainability'
 import ClickSpark from './components/ClickSpark'
+import AgamyaAgentNav from './components/AgamyaAgentNav'
 
 // ── Global Logistics Orbital Background with Falling Sparkles ──────────────────
 function OrbitalEarthBackground() {
@@ -147,6 +148,7 @@ function App() {
   return (
     <Router>
       <ClickSpark />
+      <AgamyaAgentNav />
       <OrbitalEarthBackground />
 
       <div className="relative z-10 min-h-screen text-white">
